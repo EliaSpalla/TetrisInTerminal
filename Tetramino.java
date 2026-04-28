@@ -1,22 +1,18 @@
-public abstract class Tetramino{
+public class Tetramino {
+    public boolean[][] forma;
+    public final TipoTetramino tipo;
 
-	public void ruota(boolean[][] tetramino){
-		int lunghezzaTetramino=tetramino.length;
+    public Tetramino(TipoTetramino tipo) {
+        this.tipo = tipo;
+        this.forma = tipo.forma;
+    }
 
-		for(int i=0;i<lunghezzaTetramino;i++){
-			for(int j=0;j<lunghezzaTetramino;j++){
-				boolean temp=tetramino[i][j];
-				tetramino[i][j]=tetramino[j][i];
-				tetramino[j][i]=temp;
-			}
-		}
-
-		for(int i=0;i<lunghezzaTetramino;i++){
-			for(int j=0;j<lunghezzaTetramino/2;j++){
-				boolean temp=tetramino[i][j];
-				tetramino[i][j]=tetramino[j][i];
-				tetramino[j][i]=temp;
-			}
-		}
-	}
+    public void ruota() {
+        int n = forma.length;
+        boolean[][] nuova = new boolean[n][n];
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n; j++)
+                nuova[j][n - 1 - i] = forma[i][j];
+        forma = nuova;
+    }
 }
