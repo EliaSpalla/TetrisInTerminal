@@ -15,4 +15,14 @@ public class Tetramino {
                 nuova[j][n - 1 - i] = forma[i][j];
         forma = nuova;
     }
+
+    public void stampa(){
+	int n=forma.length;
+	for(int i=0;i<n;i++){
+	    for(int j=0;j<n;j++){
+		System.out.print((forma[i][j] ? "[]":"  "));
+	    }
+	    System.out.println();
+	}
+    }
 }

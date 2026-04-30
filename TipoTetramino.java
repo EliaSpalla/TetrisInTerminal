@@ -1,13 +1,13 @@
 import java.util.Random;
 
 public enum TipoTetramino {
-    T  (new boolean[][]{{false,false,false},{false,true,false},{true,true,true}},   "\033[35m"), // magenta
-    I  (new boolean[][]{{true,true,true,true}},                                     "\033[36m"), // cyan
-    S  (new boolean[][]{{false,false,false},{false,true,true},{true,true,false}},   "\033[32m"), // verde
-    S_REV(new boolean[][]{{false,false,false},{true,true,false},{false,true,true}}, "\033[31m"), // rosso
-    L  (new boolean[][]{{false,false,false},{false,false,true},{true,true,true}},   "\033[33m"), // giallo
-    L_REV(new boolean[][]{{false,false,false},{true,false,false},{true,true,true}}, "\033[34m"), // blu
-    Q  (new boolean[][]{{true,true},{true,true}},                                   "\033[37m"); // bianco
+    T  (new boolean[][]{{false,false,false},{false,true,false},{true,true,true}},                                             "\033[35m"), // magenta
+    I  (new boolean[][]{{false,false,false,false},{true,true,true,true},{false,false,false,false},{false,false,false,false}}, "\033[36m"), // cyan
+    S  (new boolean[][]{{false,false,false},{false,true,true},{true,true,false}},                                             "\033[32m"), // verde
+    S_REV(new boolean[][]{{false,false,false},{true,true,false},{false,true,true}},                                           "\033[31m"), // rosso
+    L  (new boolean[][]{{false,false,false},{false,false,true},{true,true,true}},                                             "\033[33m"), // giallo
+    L_REV(new boolean[][]{{false,false,false},{true,false,false},{true,true,true}},                                           "\033[34m"), // blu
+    Q  (new boolean[][]{{true,true},{true,true}},                                                                             "\033[37m"); // bianco
 
     public final boolean[][] forma;
     public final String colore;
