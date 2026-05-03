@@ -1,29 +1,88 @@
- import java.util.Random;
+import java.util.Random;
+import java.util.Scanner;
+import java.io.IOException;
+import com.googlecode.lanterna.TerminalSize;
+import com.googlecode.lanterna.TextCharacter;
+import com.googlecode.lanterna.TextColor;
+import com.googlecode.lanterna.input.KeyStroke;
+import com.googlecode.lanterna.input.KeyType;
+import com.googlecode.lanterna.screen.Screen;
+import com.googlecode.lanterna.screen.TerminalScreen;
+import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
+import com.googlecode.lanterna.terminal.Terminal;
 
 public class Main {
+
     final static int ALTEZZABUFFER = 3;
     final static int ALTEZZAGRIGLIA = 20;
     final static int LUNGHEZZAGRIGLIA = 10;
     static int xTetramino, yTetramino;
-    static boolean giocoInCorso=true;
+    static boolean giocoInCorso;
     static TipoTetramino[][] griglia = new TipoTetramino[ALTEZZAGRIGLIA + ALTEZZABUFFER][LUNGHEZZAGRIGLIA];
+    static int punteggio = 0;
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws IOException, InterruptedException {
+        // inizializzazione
         Tetramino t = new Tetramino(TipoTetramino.casuale());
-	Tetramino prossimo=new Tetramino(TipoTetramino.casuale());
+        Tetramino prossimo = new Tetramino(TipoTetramino.casuale());
         inserisciTetraminoInBuffer(t);
+
+        Terminal terminal = new DefaultTerminalFactory().createTerminal();
+        Screen screen = new TerminalScreen(terminal);
+        screen.startScreen();
+        screen.setCursorPosition(null);
+
+        // Passiamo l'oggetto screen al ciclo di gioco
+        cicloDiGioco(t, prossimo, screen);
+    }
+
+    public static void cicloDiGioco(Tetramino t, Tetramino prossimo, Screen screen) throws IOException, InterruptedException {
+        giocoInCorso = true;
+
+        // ciclo di gioco
         while (giocoInCorso) {
+            // stampa
             Thread.sleep(200);
             clearTerminal();
             stampaGriglia(prossimo);
-            if(!check(t)){
-	    	t=prossimo;
-		prossimo=new Tetramino(TipoTetramino.casuale());
-		inserisciTetraminoInBuffer(t);
-	    }else{applicaGravita(t);}
+
+            // riceve input/modifiche - Ora usa lo screen passato come parametro
+            KeyStroke key = screen.pollInput();
+            if (key != null) {
+                // Corretto KeyType.Escape (case sensitive)
+                if (key.getKeyType() == KeyType.Escape) giocoInCorso = false;
+		if (key.getKeyType()==KeyType.ArrowUp) ruotaTetramino(t);
+            }
+
+            if (!check(t, yTetramino + 1, xTetramino)) {
+                t = prossimo;
+                prossimo = new Tetramino(TipoTetramino.casuale());
+                inserisciTetraminoInBuffer(t);
+            } else {
+                applicaGravita(t);
+            }
         }
+
+        screen.stopScreen();
     }
 
+    public static void ruotaTetramino(Tetramino t) {
+    rimuoviTetramino(t); // Rimuovi il pezzo attuale dalla griglia
+    
+    t.ruota(); // Ruota il pezzo originale
+    
+    // Se la nuova posizione NON è valida
+    if (!check(t, yTetramino, xTetramino)) {
+        // Ruota altre 3 volte per tornare alla posizione originale
+        t.ruota();
+        t.ruota();
+        t.ruota();
+    }
+    
+    aggiungiTetramino(t); // Reinserisci il pezzo (originale o ripristinato)
+}
+
+    
     public static void stampaGriglia(Tetramino successivo) {
         for (int i = 0; i < ALTEZZAGRIGLIA + ALTEZZABUFFER; i++) {
             System.out.print("<! ");
@@ -39,101 +98,103 @@ public class Main {
         for (int i = 0; i < LUNGHEZZAGRIGLIA; i++) System.out.print("==");
         System.out.println(" !>");
 
-	System.out.println("\n**Successivo**");
-	successivo.stampa();
+        System.out.println("\n**Successivo**");
+        successivo.stampa();
     }
 
     public static void inserisciTetraminoInBuffer(Tetramino t) {
-   	 // Calcola la coordinata X per centrare il pezzo nella griglia
-	if(t.tipo.equals("I")){xTetramino=LUNGHEZZAGRIGLIA/2;}
- 	else{xTetramino = (LUNGHEZZAGRIGLIA - t.forma[0].length) / 2;}
-	 yTetramino = 0;
+        // Calcola la coordinata X per centrare il pezzo nella griglia
+        if (t.tipo.name().equals("I")) { // Corretto controllo tipo enum
+            xTetramino = LUNGHEZZAGRIGLIA / 2;
+        } else {
+            xTetramino = (LUNGHEZZAGRIGLIA - t.forma[0].length) / 2;
+        }
+        yTetramino = 0;
 
- 	 // 1. Controllo Collisioni (Game Over)
-  	 // Prima di inserire, verifichiamo che i blocchi occupati dal tetramino siano liberi nella griglia
-       for (int i = 0; i < t.forma.length; i++) {
-     	   for (int j = 0; j < t.forma[i].length; j++) {
+        // 1. Controllo Collisioni (Game Over)
+        for (int i = 0; i < t.forma.length; i++) {
+            for (int j = 0; j < t.forma[i].length; j++) {
                 if (t.forma[i][j]) {
-                   // Se la cella della griglia è già occupata, il gioco finisce
-             	   if (griglia[yTetramino + i][xTetramino + j] != null) {
-              	      giocoInCorso = false;
-              	      return;
+                    if (griglia[yTetramino + i][xTetramino + j] != null) {
+                        giocoInCorso = false;
+                        return;
                     }
-       	        }
+                }
             }
-    	}
+        }
         // 2. Inserimento Effettivo
         aggiungiTetramino(t);
     }
 
-    public static boolean check(Tetramino t) {
+    public static boolean check(Tetramino t, int nuovaY, int nuovaX) {
         rimuoviTetramino(t);
 
-	for (int i = 0; i < t.forma.length; i++) {
+        for (int i = 0; i < t.forma.length; i++) {
             for (int j = 0; j < t.forma[i].length; j++) {
                 if (t.forma[i][j]) {
-                    int nuovaY = yTetramino + i + 1; // Posizione dove andrebbe il blocco
-                    int currentX = xTetramino + j;
+                    int rigaControllo = nuovaY + i;
+                    int colonnaControllo = nuovaX + j;
 
-                    // Controlla se tocca il fondo o un altro pezzo
-                    if (nuovaY >= ALTEZZAGRIGLIA + ALTEZZABUFFER||griglia[nuovaY][currentX]!=null){
-			aggiungiTetramino(t);
-			return false;
-		    }
+                    if (rigaControllo >= ALTEZZAGRIGLIA + ALTEZZABUFFER ||
+                        colonnaControllo < 0 ||
+                        colonnaControllo >= LUNGHEZZAGRIGLIA) {
+                        aggiungiTetramino(t);
+                        return false;
+                    }
+
+                    if (griglia[rigaControllo][colonnaControllo] != null) {
+                        aggiungiTetramino(t);
+                        return false;
+                    }
                 }
             }
         }
-	aggiungiTetramino(t);
+        aggiungiTetramino(t);
         return true;
     }
 
-    public static void rimuoviTetramino(Tetramino t){
-	for(int i=0;i<t.forma.length;i++){
-	    for(int j=0;j<t.forma.length;j++){
-		if (t.forma[i][j]) {
+    public static void movimento(Tetramino t, int direzione) {
+        if (direzione == 0) veloceGiù(t);
+        xTetramino += direzione;
+    }
+
+    public static void veloceGiù(Tetramino t) {
+    }
+
+    public static void rimuoviTetramino(Tetramino t) {
+        for (int i = 0; i < t.forma.length; i++) {
+            for (int j = 0; j < t.forma[i].length; j++) {
+                if (t.forma[i][j]) {
                     int riga = yTetramino + i;
                     int colonna = xTetramino + j;
-                    // Protezione contro IndexOutOfBounds
-                    if (riga >= 0 && riga < (ALTEZZAGRIGLIA + ALTEZZABUFFER) && 
+                    if (riga >= 0 && riga < (ALTEZZAGRIGLIA + ALTEZZABUFFER) &&
                         colonna >= 0 && colonna < LUNGHEZZAGRIGLIA) {
                         griglia[riga][colonna] = null;
                     }
                 }
-	    }
-	}
+            }
+        }
     }
 
-    public static void aggiungiTetramino(Tetramino t){
-	for(int i=0;i<t.forma.length;i++){
-	    for(int j=0;j<t.forma.length;j++){
-		if (t.forma[i][j]) {
+    public static void aggiungiTetramino(Tetramino t) {
+        for (int i = 0; i < t.forma.length; i++) {
+            for (int j = 0; j < t.forma[i].length; j++) {
+                if (t.forma[i][j]) {
                     int riga = yTetramino + i;
                     int colonna = xTetramino + j;
-                    // Protezione contro IndexOutOfBounds
-                    if (riga >= 0 && riga < (ALTEZZAGRIGLIA + ALTEZZABUFFER) && 
+                    if (riga >= 0 && riga < (ALTEZZAGRIGLIA + ALTEZZABUFFER) &&
                         colonna >= 0 && colonna < LUNGHEZZAGRIGLIA) {
                         griglia[riga][colonna] = t.tipo;
                     }
                 }
-	    }
-	}
+            }
+        }
     }
 
     public static void applicaGravita(Tetramino t) {
-        // 1. Rimuovi il pezzo dalla posizione attuale
-        for (int i = 0; i < t.forma.length; i++) {
-            for (int j = 0; j < t.forma[i].length; j++) {
-                if (t.forma[i][j]) griglia[yTetramino + i][xTetramino + j] = null;
-            }
-        }
-        // 2. Aggiorna la coordinata
+        rimuoviTetramino(t);
         yTetramino++;
-        // 3. Disegna il pezzo nella nuova posizione
-        for (int i = 0; i < t.forma.length; i++) {
-            for (int j = 0; j < t.forma[i].length; j++) {
-                if (t.forma[i][j]) griglia[yTetramino + i][xTetramino + j] = t.tipo;
-            }
-	}
+        aggiungiTetramino(t);
     }
 
     public static void clearTerminal() {
