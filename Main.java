@@ -67,22 +67,19 @@ public class Main {
     }
 
     public static void ruotaTetramino(Tetramino t) {
-    rimuoviTetramino(t); // Rimuovi il pezzo attuale dalla griglia
-    
-    t.ruota(); // Ruota il pezzo originale
-    
-    // Se la nuova posizione NON è valida
-    if (!check(t, yTetramino, xTetramino)) {
-        // Ruota altre 3 volte per tornare alla posizione originale
-        t.ruota();
-        t.ruota();
-        t.ruota();
-    }
-    
-    aggiungiTetramino(t); // Reinserisci il pezzo (originale o ripristinato)
-}
+    	rimuoviTetramino(t); // Rimuovi il pezzo attuale dalla griglia
+    	t.ruota(); // Ruota il pezzo originale
 
-    
+    	// Se la nuova posizione NON è valida
+        if (!check(t, yTetramino, xTetramino)) {
+            // Ruota altre 3 volte per tornare alla posizione originale
+            t.ruota();
+            t.ruota();
+            t.ruota();
+        }
+        aggiungiTetramino(t); // Reinserisci il pezzo (originale o ripristinato)
+    }
+
     public static void stampaGriglia(Tetramino successivo) {
         for (int i = 0; i < ALTEZZAGRIGLIA + ALTEZZABUFFER; i++) {
             System.out.print("<! ");
@@ -105,7 +102,7 @@ public class Main {
     public static void inserisciTetraminoInBuffer(Tetramino t) {
         // Calcola la coordinata X per centrare il pezzo nella griglia
         if (t.tipo.name().equals("I")) { // Corretto controllo tipo enum
-            xTetramino = LUNGHEZZAGRIGLIA / 2;
+            xTetramino = LUNGHEZZAGRIGLIA / 2 -2;
         } else {
             xTetramino = (LUNGHEZZAGRIGLIA - t.forma[0].length) / 2;
         }
