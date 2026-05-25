@@ -1,9 +1,4 @@
-import java.util.Random;
-import java.util.Scanner;
 import java.io.IOException;
-import com.googlecode.lanterna.TerminalSize;
-import com.googlecode.lanterna.TextCharacter;
-import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
 import com.googlecode.lanterna.screen.Screen;
@@ -26,95 +21,117 @@ public class Main {
         // inizializzazione
         t = new Tetramino(TipoTetramino.casuale());
         prossimo = new Tetramino(TipoTetramino.casuale());
-        inserisciTetraminoInBuffer(); // Corretto: rimosso parametro t
+        inserisciTetraminoInBuffer();
 
         Terminal terminal = new DefaultTerminalFactory().createTerminal();
         Screen screen = new TerminalScreen(terminal);
         screen.startScreen();
         screen.setCursorPosition(null);
 
-        // Passiamo l'oggetto screen al ciclo di gioco
         cicloDiGioco(screen);
     }
 
     public static void cicloDiGioco(Screen screen) throws IOException, InterruptedException {
         giocoInCorso = true;
 
-        // ciclo di gioco
         while (giocoInCorso) {
-            // stampa
             Thread.sleep(200);
             clearTerminal();
-            stampaGriglia(); // Corretto: rimosso parametro prossimo
+            stampaGriglia();
 
-            // riceve input/modifiche
             KeyStroke key = screen.pollInput();
             if (key != null) {
                 if (key.getKeyType() == KeyType.Escape) {
                     giocoInCorso = false;
                     break;
                 }
-                if (key.getKeyType() == KeyType.ArrowUp) ruotaTetramino(); // Corretto: rimosso parametro t
-                if (key.getKeyType() == KeyType.ArrowRight) muoviTetramino(1); // Corretto: rimosso parametro t
-                if (key.getKeyType() == KeyType.ArrowLeft) muoviTetramino(-1); // Corretto: rimosso parametro t
+                if (key.getKeyType() == KeyType.ArrowUp) ruotaTetramino();
+                if (key.getKeyType() == KeyType.ArrowRight) muoviTetramino(1);
+                if (key.getKeyType() == KeyType.ArrowLeft) muoviTetramino(-1);
                 if (key.getKeyType() == KeyType.ArrowDown) abbassaTetramino();
-	    }
+            }
 
-            // a causa della ripetizione automatica della tastiera
             while (screen.pollInput() != null) {
-                // Continua a ciclare a vuoto finché il buffer non è pulito
+                // Svuota buffer per auto-repeat tastiera
             }
 
             if (!checkGravita()){
-		t = prossimo;
+                rimuoviLineeComplete();
+                t = prossimo;
                 prossimo = new Tetramino(TipoTetramino.casuale());
                 inserisciTetraminoInBuffer();
-	    }
+            }
         }
 
         screen.stopScreen();
     }
 
+    public static void rimuoviLineeComplete() {
+        // Parte dal fondo della griglia e sale (include la riga 0 con >= 0)
+        for (int i = (ALTEZZAGRIGLIA + ALTEZZABUFFER) - 1; i >= 0; i--) {
+            boolean checkLinea = true;
+            // Controlla tutte le colonne (include la colonna 0 con j >= 0)
+            for (int j = 0; j < LUNGHEZZAGRIGLIA; j++) {
+                if (griglia[i][j] == null) {
+                    checkLinea = false;
+                    break;
+                }
+            }
+            if (checkLinea) {
+                rimuoviLinea(i);
+                // Incrementa i per ricontrollare la stessa riga dopo lo slittamento
+                i++;
+            }
+        }
+    }
+
+    public static void rimuoviLinea(int riga) {
+        // Svuota la riga completata
+        for (int j = 0; j < LUNGHEZZAGRIGLIA; j++) {
+            griglia[riga][j] = null;
+        }
+        // Fa slittare tutte le righe sovrastanti verso il basso
+        for (int i = riga; i > 0; i--) {
+            griglia[i] = griglia[i - 1];
+        }
+        // Crea una nuova riga vuota in cima alla griglia (riga 0)
+        griglia[0] = new TipoTetramino[LUNGHEZZAGRIGLIA];
+    }
+
     public static void abbassaTetramino(){
-	while(checkGravita()){}
+        while(checkGravita()){}
     }
 
     public static void muoviTetramino(int direzione) {
-        rimuoviTetramino(); // Corretto: rimosso parametro t
-        if (check(yTetramino, xTetramino + direzione)) { // Corretto: rimossi parametri t e corretta firma check
+        rimuoviTetramino();
+        if (check(yTetramino, xTetramino + direzione)) {
             xTetramino += direzione;
         }
-        aggiungiTetramino(); // Corretto: rimosso parametro t
+        aggiungiTetramino();
     }
 
     public static void ruotaTetramino() {
-        rimuoviTetramino(); // Corretto: rimosso parametro t
-        t.ruota(); // Ruota il pezzo originale
+        rimuoviTetramino();
+        t.ruota();
 
-        // Se la nuova posizione NON è valida
-        if (!check(yTetramino, xTetramino)) { // Corretto: passati solo 2 parametri
-            // Ruota altre 3 volte per tornare alla posizione originale
+        if (!check(yTetramino, xTetramino)) {
             t.ruota();
             t.ruota();
             t.ruota();
         }
-        aggiungiTetramino(); // Corretto: rimosso parametro t
+        aggiungiTetramino();
     }
 
     public static boolean checkGravita() {
-        // Controllo gravità: prima rimuoviamo per non collidere con se stessi durante il check
         rimuoviTetramino();
-        if (!check(yTetramino + 1, xTetramino)) { // Corretto: passati solo 2 parametri
-            // Se non può scendere, il pezzo si blocca: lo rimettiamo definitivamente nella griglia
+        if (!check(yTetramino + 1, xTetramino)) {
             aggiungiTetramino();
-
-	    return false;
+            return false;
         } else {
-            // Se la posizione è valida, riaggiungiamo e applichiamo la gravità
             aggiungiTetramino();
-            applicaGravita(); // Corretto: rimosso parametro t
+            applicaGravita();
             return true;
-	}
+        }
     }
 
     public static void stampaGriglia() {
@@ -137,15 +154,13 @@ public class Main {
     }
 
     public static void inserisciTetraminoInBuffer() {
-        // Calcola la coordinata X per centrare il pezzo nella griglia
-        if (t.tipo.name().equals("I")) { // Corretto controllo tipo enum
+        if (t.tipo.name().equals("I")) {
             xTetramino = LUNGHEZZAGRIGLIA / 2 - 2;
         } else {
             xTetramino = (LUNGHEZZAGRIGLIA - t.forma[0].length) / 2;
         }
         yTetramino = 0;
 
-        // 1. Controllo Collisioni (Game Over)
         for (int i = 0; i < t.forma.length; i++) {
             for (int j = 0; j < t.forma[i].length; j++) {
                 if (t.forma[i][j]) {
@@ -156,26 +171,22 @@ public class Main {
                 }
             }
         }
-        // 2. Inserimento Effettivo
         aggiungiTetramino();
     }
 
     public static boolean check(int nuovaY, int nuovaX) {
-        // Cerca SOLO se i blocchi vanno a collidere, senza modificare la griglia
         for (int i = 0; i < t.forma.length; i++) {
             for (int j = 0; j < t.forma[i].length; j++) {
                 if (t.forma[i][j]) {
                     int rigaControllo = nuovaY + i;
                     int colonnaControllo = nuovaX + j;
 
-                    // Controlla i bordi della griglia
                     if (rigaControllo >= ALTEZZAGRIGLIA + ALTEZZABUFFER ||
-                        colonnaControllo < 0 ||
-                        colonnaControllo >= LUNGHEZZAGRIGLIA) {
+                            colonnaControllo < 0 ||
+                            colonnaControllo >= LUNGHEZZAGRIGLIA) {
                         return false;
                     }
 
-                    // Controlla se la cella è occupata da un altro blocco
                     if (griglia[rigaControllo][colonnaControllo] != null) {
                         return false;
                     }
@@ -192,7 +203,7 @@ public class Main {
                     int riga = yTetramino + i;
                     int colonna = xTetramino + j;
                     if (riga >= 0 && riga < (ALTEZZAGRIGLIA + ALTEZZABUFFER) &&
-                        colonna >= 0 && colonna < LUNGHEZZAGRIGLIA) {
+                            colonna >= 0 && colonna < LUNGHEZZAGRIGLIA) {
                         griglia[riga][colonna] = null;
                     }
                 }
@@ -207,7 +218,7 @@ public class Main {
                     int riga = yTetramino + i;
                     int colonna = xTetramino + j;
                     if (riga >= 0 && riga < (ALTEZZAGRIGLIA + ALTEZZABUFFER) &&
-                        colonna >= 0 && colonna < LUNGHEZZAGRIGLIA) {
+                            colonna >= 0 && colonna < LUNGHEZZAGRIGLIA) {
                         griglia[riga][colonna] = t.tipo;
                     }
                 }
@@ -215,10 +226,10 @@ public class Main {
         }
     }
 
-    public static void applicaGravita() { // Corretto: rimosso parametro t nella firma
-        rimuoviTetramino(); // Corretto: rimosso parametro t
+    public static void applicaGravita() {
+        rimuoviTetramino();
         yTetramino++;
-        aggiungiTetramino(); // Corretto: rimosso parametro t
+        aggiungiTetramino();
     }
 
     public static void clearTerminal() {
