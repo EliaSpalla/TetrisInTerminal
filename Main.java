@@ -51,12 +51,8 @@ public class Main {
         while (giocoInCorso) {
             Thread.sleep(200);
 
-            // Pulisce lo schermo virtuale di Lanterna
             screen.clear();
-
-            // Disegna la griglia sullo screen
             stampaGriglia(screen);
-
             // Rende effettive le modifiche grafiche sulla finestra
             screen.refresh();
 
@@ -112,7 +108,7 @@ public class Main {
         }
         if(lineeRimosse>0){
             lineeEliminate+=lineeRimosse;
-            punteggio+=puntiXLinee[lineeRimosse];
+            punteggio+=puntiXLinee[lineeRimosse]*livello;
         }
     }
 
