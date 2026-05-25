@@ -1,4 +1,8 @@
 import java.io.IOException;
+import com.googlecode.lanterna.TerminalPosition;
+import com.googlecode.lanterna.TextCharacter;
+import com.googlecode.lanterna.TextColor;
+import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.input.KeyStroke;
 import com.googlecode.lanterna.input.KeyType;
 import com.googlecode.lanterna.screen.Screen;
@@ -11,18 +15,29 @@ public class Main {
     final static int ALTEZZABUFFER = 3;
     final static int ALTEZZAGRIGLIA = 20;
     final static int LUNGHEZZAGRIGLIA = 10;
+    static Tetramino t, prossimo;
     static int xTetramino, yTetramino;
     static boolean giocoInCorso;
     static TipoTetramino[][] griglia = new TipoTetramino[ALTEZZAGRIGLIA + ALTEZZABUFFER][LUNGHEZZAGRIGLIA];
     static int punteggio = 0;
-    static Tetramino t, prossimo;
+    static int livello=1;
+    static int lineeEliminate=0;
+    static int[] puntiXLinee= new int[]{100,300,500,800};
+
 
     public static void main(String[] args) throws IOException, InterruptedException {
+        // inizializzazione
         t = new Tetramino(TipoTetramino.casuale());
         prossimo = new Tetramino(TipoTetramino.casuale());
         inserisciTetraminoInBuffer();
 
-        Terminal terminal = new DefaultTerminalFactory().createTerminal();
+        DefaultTerminalFactory factory = new DefaultTerminalFactory();
+        // Dice a Lanterna di preferire l'emulatore grafico (la finestra Swing)
+        factory.setPreferTerminalEmulator(true);
+        // Dice a Lanterna di NON forzare il terminale testuale della console
+        factory.setForceTextTerminal(false);
+
+        Terminal terminal = factory.createTerminal();
         Screen screen = new TerminalScreen(terminal);
         screen.startScreen();
         screen.setCursorPosition(null);
@@ -35,8 +50,15 @@ public class Main {
 
         while (giocoInCorso) {
             Thread.sleep(200);
-            clearTerminal();
-            stampaGriglia();
+
+            // Pulisce lo schermo virtuale di Lanterna
+            screen.clear();
+
+            // Disegna la griglia sullo screen
+            stampaGriglia(screen);
+
+            // Rende effettive le modifiche grafiche sulla finestra
+            screen.refresh();
 
             KeyStroke key = screen.pollInput();
             if (key != null) {
@@ -56,6 +78,7 @@ public class Main {
 
             if (!checkGravita()){
                 rimuoviLineeComplete();
+                calcolaLivello();
                 t = prossimo;
                 prossimo = new Tetramino(TipoTetramino.casuale());
                 inserisciTetraminoInBuffer();
@@ -65,11 +88,16 @@ public class Main {
         screen.stopScreen();
     }
 
+    public static void calcolaLivello(){
+        double numero=lineeEliminate/10;
+        int arrotondato =(int) Math.floor(numero);
+        livello=arrotondato+1;
+    }
+
     public static void rimuoviLineeComplete() {
-        // Parte dal fondo della griglia e sale (include la riga 0 con >= 0)
+        int lineeRimosse=0;
         for (int i = (ALTEZZAGRIGLIA + ALTEZZABUFFER) - 1; i >= 0; i--) {
             boolean checkLinea = true;
-            // Controlla tutte le colonne (include la colonna 0 con j >= 0)
             for (int j = 0; j < LUNGHEZZAGRIGLIA; j++) {
                 if (griglia[i][j] == null) {
                     checkLinea = false;
@@ -78,22 +106,23 @@ public class Main {
             }
             if (checkLinea) {
                 rimuoviLinea(i);
-                // Incrementa i per ricontrollare la stessa riga dopo lo slittamento
+                lineeRimosse++;
                 i++;
             }
+        }
+        if(lineeRimosse>0){
+            lineeEliminate+=lineeRimosse;
+            punteggio+=puntiXLinee[lineeRimosse];
         }
     }
 
     public static void rimuoviLinea(int riga) {
-        // Svuota la riga completata
         for (int j = 0; j < LUNGHEZZAGRIGLIA; j++) {
             griglia[riga][j] = null;
         }
-        // Fa slittare tutte le righe sovrastanti verso il basso
         for (int i = riga; i > 0; i--) {
             griglia[i] = griglia[i - 1];
         }
-        // Crea una nuova riga vuota in cima alla griglia (riga 0)
         griglia[0] = new TipoTetramino[LUNGHEZZAGRIGLIA];
     }
 
@@ -133,23 +162,72 @@ public class Main {
         }
     }
 
-    public static void stampaGriglia() {
-        for (int i = 0; i < ALTEZZAGRIGLIA + ALTEZZABUFFER; i++) {
-            System.out.print("<! ");
-            for (int j = 0; j < LUNGHEZZAGRIGLIA; j++) {
-                if (griglia[i][j] != null)
-                    System.out.print(griglia[i][j].colore + "██" + TipoTetramino.RESET);
-                else
-                    System.out.print("..");
-            }
-            System.out.println(" !>");
-        }
-        System.out.print("<! ");
-        for (int i = 0; i < LUNGHEZZAGRIGLIA; i++) System.out.print("==");
-        System.out.println(" !>");
+    public static void stampaGriglia(Screen screen) {
+        TextGraphics graphics = screen.newTextGraphics();
 
-        System.out.println("\n**Successivo**");
-        prossimo.stampa();
+        int rigaCorrente = 0;
+        for (int i = 0; i < ALTEZZAGRIGLIA + ALTEZZABUFFER; i++) {
+            graphics.putString(0, rigaCorrente, "<! ");
+            int colonnaCorrente = 3;
+            for (int j = 0; j < LUNGHEZZAGRIGLIA; j++) {
+                if (griglia[i][j] != null) {
+                    graphics.setForegroundColor(convertiColoreAnsi(griglia[i][j].colore));
+                    graphics.putString(colonnaCorrente, rigaCorrente, "██");
+                } else {
+                    graphics.setForegroundColor(TextColor.ANSI.DEFAULT);
+                    graphics.putString(colonnaCorrente, rigaCorrente, "..");
+                }
+                colonnaCorrente += 2;
+            }
+            graphics.setForegroundColor(TextColor.ANSI.DEFAULT);
+            graphics.putString(colonnaCorrente, rigaCorrente, " !>");
+            rigaCorrente++;
+        }
+
+        // Base della griglia
+        graphics.putString(0, rigaCorrente, "<! ");
+        StringBuilder base = new StringBuilder();
+        for (int i = 0; i < LUNGHEZZAGRIGLIA; i++) base.append("==");
+        graphics.putString(3, rigaCorrente, base.toString());
+        graphics.putString(3 + (LUNGHEZZAGRIGLIA * 2), rigaCorrente, " !>");
+
+        // Pannello laterale (Colonna 28)
+        int colonnaPannello = 28;
+        graphics.setForegroundColor(TextColor.ANSI.DEFAULT);
+
+        // 🌟 STATISTICHE (Ora posizionate sopra)
+        graphics.putString(colonnaPannello, 1, "PUNTI:   " + punteggio);
+        graphics.putString(colonnaPannello, 2, "LIVELLO: " + livello);
+
+        // 🌟 PEZZO SUCCESSIVO (Ora posizionato sotto)
+        graphics.putString(colonnaPannello, 4, "**PROSSIMO**");
+
+        int n = prossimo.forma.length;
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (prossimo.forma[i][j]) {
+                    graphics.setForegroundColor(convertiColoreAnsi(prossimo.tipo.colore));
+                    graphics.putString(colonnaPannello + (j * 2), 6 + i, "██");
+                } else {
+                    graphics.setForegroundColor(TextColor.ANSI.DEFAULT);
+                    graphics.putString(colonnaPannello + (j * 2), 6 + i, "  ");
+                }
+            }
+        }
+
+        // Ripristina il colore di default
+        graphics.setForegroundColor(TextColor.ANSI.DEFAULT);
+    }
+
+    // Metodo helper per mappare i tuoi codici colore ANSI nei colori nativi di Lanterna
+    private static TextColor convertiColoreAnsi(String coloreAnsi) {
+        if (coloreAnsi.contains("[35m")) return TextColor.ANSI.MAGENTA;
+        if (coloreAnsi.contains("[36m")) return TextColor.ANSI.CYAN;
+        if (coloreAnsi.contains("[32m")) return TextColor.ANSI.GREEN;
+        if (coloreAnsi.contains("[31m")) return TextColor.ANSI.RED;
+        if (coloreAnsi.contains("[33m")) return TextColor.ANSI.YELLOW;
+        if (coloreAnsi.contains("[34m")) return TextColor.ANSI.BLUE;
+        return TextColor.ANSI.WHITE;
     }
 
     public static void inserisciTetraminoInBuffer() {
@@ -229,18 +307,5 @@ public class Main {
         rimuoviTetramino();
         yTetramino++;
         aggiungiTetramino();
-    }
-
-    public static void clearTerminal() {
-        try {
-            if (System.getProperty("os.name").contains("Windows")) {
-                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
-            } else {
-                System.out.print("\033[H\033[2J");
-                System.out.flush();
-            }
-        } catch (Exception e) {
-            for (int i = 0; i < 50; i++) System.out.println();
-        }
     }
 }
