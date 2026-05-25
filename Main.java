@@ -18,7 +18,6 @@ public class Main {
     static Tetramino t, prossimo;
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        // inizializzazione
         t = new Tetramino(TipoTetramino.casuale());
         prossimo = new Tetramino(TipoTetramino.casuale());
         inserisciTetraminoInBuffer();
