@@ -1,6 +1,4 @@
 import java.io.IOException;
-import com.googlecode.lanterna.TerminalPosition;
-import com.googlecode.lanterna.TextCharacter;
 import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.graphics.TextGraphics;
 import com.googlecode.lanterna.input.KeyStroke;
@@ -9,8 +7,6 @@ import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
-
-public class Main {
 
     final static int ALTEZZABUFFER = 3;
     final static int ALTEZZAGRIGLIA = 20;
@@ -25,7 +21,7 @@ public class Main {
     static int[] puntiXLinee= new int[]{100,300,500,800};
 
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    void main() throws IOException, InterruptedException {
         // inizializzazione
         t = new Tetramino(TipoTetramino.casuale());
         prossimo = new Tetramino(TipoTetramino.casuale());
@@ -180,7 +176,6 @@ public class Main {
             rigaCorrente++;
         }
 
-        // Base della griglia
         graphics.putString(0, rigaCorrente, "<! ");
         StringBuilder base = new StringBuilder();
         for (int i = 0; i < LUNGHEZZAGRIGLIA; i++) base.append("==");
@@ -191,11 +186,9 @@ public class Main {
         int colonnaPannello = 28;
         graphics.setForegroundColor(TextColor.ANSI.DEFAULT);
 
-        // 🌟 STATISTICHE (Ora posizionate sopra)
         graphics.putString(colonnaPannello, 1, "PUNTI:   " + punteggio);
         graphics.putString(colonnaPannello, 2, "LIVELLO: " + livello);
 
-        // 🌟 PEZZO SUCCESSIVO (Ora posizionato sotto)
         graphics.putString(colonnaPannello, 4, "**PROSSIMO**");
 
         int n = prossimo.forma.length;
@@ -211,11 +204,10 @@ public class Main {
             }
         }
 
-        // Ripristina il colore di default
         graphics.setForegroundColor(TextColor.ANSI.DEFAULT);
     }
 
-    // Metodo helper per mappare i tuoi codici colore ANSI nei colori nativi di Lanterna
+    // Metodo per mappare i tuoi codici colore ANSI nei colori nativi di Lanterna
     private static TextColor convertiColoreAnsi(String coloreAnsi) {
         if (coloreAnsi.contains("[35m")) return TextColor.ANSI.MAGENTA;
         if (coloreAnsi.contains("[36m")) return TextColor.ANSI.CYAN;
@@ -275,8 +267,7 @@ public class Main {
                 if (t.forma[i][j]) {
                     int riga = yTetramino + i;
                     int colonna = xTetramino + j;
-                    if (riga >= 0 && riga < (ALTEZZAGRIGLIA + ALTEZZABUFFER) &&
-                            colonna >= 0 && colonna < LUNGHEZZAGRIGLIA) {
+                    if (riga >= 0 && riga < (ALTEZZAGRIGLIA + ALTEZZABUFFER) && colonna >= 0 && colonna < LUNGHEZZAGRIGLIA) {
                         griglia[riga][colonna] = null;
                     }
                 }
@@ -304,4 +295,3 @@ public class Main {
         yTetramino++;
         aggiungiTetramino();
     }
-}
