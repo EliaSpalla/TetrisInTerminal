@@ -8,6 +8,8 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 
+public class Main {
+
     final static int ALTEZZABUFFER = 3;
     final static int ALTEZZAGRIGLIA = 20;
     final static int LUNGHEZZAGRIGLIA = 10;
@@ -16,9 +18,9 @@ import com.googlecode.lanterna.terminal.Terminal;
     static boolean giocoInCorso;
     static TipoTetramino[][] griglia = new TipoTetramino[ALTEZZAGRIGLIA + ALTEZZABUFFER][LUNGHEZZAGRIGLIA];
     static int punteggio = 0;
-    static int livello=1;
-    static int lineeEliminate=0;
-    static int[] puntiXLinee= new int[]{100,300,500,800};
+    static int livello = 1;
+    static int lineeEliminate = 0;
+    static int[] puntiXLinee = new int[]{100, 300, 500, 800};
 
 
     void main() throws IOException, InterruptedException {
@@ -68,7 +70,7 @@ import com.googlecode.lanterna.terminal.Terminal;
                 // Svuota buffer per auto-repeat tastiera
             }
 
-            if (!checkGravita()){
+            if (!checkGravita()) {
                 rimuoviLineeComplete();
                 calcolaLivello();
                 t = prossimo;
@@ -80,14 +82,14 @@ import com.googlecode.lanterna.terminal.Terminal;
         screen.stopScreen();
     }
 
-    public static void calcolaLivello(){
-        double numero=lineeEliminate/10;
-        int arrotondato =(int) Math.floor(numero);
-        livello=arrotondato+1;
+    public static void calcolaLivello() {
+        double numero = lineeEliminate / 10;
+        int arrotondato = (int) Math.floor(numero);
+        livello = arrotondato + 1;
     }
 
     public static void rimuoviLineeComplete() {
-        int lineeRimosse=0;
+        int lineeRimosse = 0;
         for (int i = (ALTEZZAGRIGLIA + ALTEZZABUFFER) - 1; i >= 0; i--) {
             boolean checkLinea = true;
             for (int j = 0; j < LUNGHEZZAGRIGLIA; j++) {
@@ -102,9 +104,9 @@ import com.googlecode.lanterna.terminal.Terminal;
                 i++;
             }
         }
-        if(lineeRimosse>0){
-            lineeEliminate+=lineeRimosse;
-            punteggio+=puntiXLinee[lineeRimosse]*livello;
+        if (lineeRimosse > 0) {
+            lineeEliminate += lineeRimosse;
+            punteggio += puntiXLinee[lineeRimosse] * livello;
         }
     }
 
@@ -118,8 +120,9 @@ import com.googlecode.lanterna.terminal.Terminal;
         griglia[0] = new TipoTetramino[LUNGHEZZAGRIGLIA];
     }
 
-    public static void abbassaTetramino(){
-        while(checkGravita()){}
+    public static void abbassaTetramino() {
+        while (checkGravita()) {
+        }
     }
 
     public static void muoviTetramino(int direzione) {
@@ -205,6 +208,11 @@ import com.googlecode.lanterna.terminal.Terminal;
         }
 
         graphics.setForegroundColor(TextColor.ANSI.DEFAULT);
+
+        graphics.putString(colonnaPannello, 12, "ruota:         ^");
+        graphics.putString(colonnaPannello, 13, "spostamento:  < >");
+        graphics.putString(colonnaPannello, 14, "giù veloce:    v");
+        graphics.putString(colonnaPannello, 15, "exit:        [esc]");
     }
 
     // Metodo per mappare i tuoi codici colore ANSI nei colori nativi di Lanterna
@@ -295,3 +303,4 @@ import com.googlecode.lanterna.terminal.Terminal;
         yTetramino++;
         aggiungiTetramino();
     }
+}
